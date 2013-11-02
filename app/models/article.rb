@@ -104,10 +104,10 @@ class Article < Content
     end
 
     def search_with_pagination(search_hash, paginate_hash)
-      
+
       state = (search_hash[:state] and ["no_draft", "drafts", "published", "withdrawn", "pending"].include? search_hash[:state]) ? search_hash[:state] : 'no_draft'
-      
-      
+
+
       list_function  = ["Article.#{state}"] + function_search_no_draft(search_hash)
 
       if search_hash[:category] and search_hash[:category].to_i > 0
@@ -120,6 +120,20 @@ class Article < Content
       eval(list_function.join('.'))
     end
 
+  end
+
+  def merge_with(article_id)
+    article = Article.find_by_id(article_id)
+    article_comments = Comment.find_all_by_article_id(article_id)
+    if article
+      self.body = self.body + " " + article.body
+      article_comments.each do |comment|
+        comment.article_id = self.id
+        comment.save
+      end
+      article.destroy
+      self.save
+    end
   end
 
   def year_url
